@@ -1,0 +1,160 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script type="text/javascript" src="glMatrix-0.9.5.js"></script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 v3Position;
+	attribute vec3 av3Color;
+	varying vec3 vv3Color;
+	void main(void)
+	{
+	    vv3Color = av3Color;
+	    gl_Position = vec4(v3Position, 1.0);
+	}
+</script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+    varying vec3 vv3Color;
+    void main(void){
+	    gl_FragColor=vec4(vv3Color, 1.0);
+	}
+</script>
+    
+<script>
+    function shaderSourceFromScript(id){
+	    var shaderScript = document.getElementById(id);
+		if(shaderScript == null) return "";
+		var sourceCode = "";
+		var child = shaderScript.firstChild;
+		while(child){
+		    if(child.nodeType == child.TEXT_NODE)
+			    sourceCode += child.textContent;
+			child = child.nextSibling;
+		}
+		return sourceCode;
+	}
+</script>
+	
+<script>
+    var gl;
+	//初始化webGL
+    function initGL(){
+	    var canvas = document.getElementById("canvas");
+		gl = canvas.getContext("experimental-webgl");
+		gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+		if(!gl)
+		    alert("can't init webGL!!!");
+	}
+	//创建shader对象，绑定对应shader源码，编译shader
+	function getShader(id){
+	    var shader;
+	    if(id == "shader-vs"){
+		    shader = gl.createShader(gl.VERTEX_SHADER);
+		}else if(id == "shader-fs"){
+		    shader = gl.createShader(gl.FRAGMENT_SHADER);
+		}
+		gl.shaderSource(shader, shaderSourceFromScript(id));
+		gl.compileShader(shader);
+		if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+		    alert(gl.getShaderInfoLog(shader));
+		return shader;
+	}
+	//创建program，将shader附加到program上，链接program，useProgram
+	//获取shader源码中的属性变量，使其可用
+	var program;
+	function initShaders(){
+	    program = gl.createProgram();
+		var vertexShader = getShader("shader-vs");
+		var fragmentShader = getShader("shader-fs");
+		gl.attachShader(program, vertexShader);
+		gl.attachShader(program, fragmentShader);
+		gl.linkProgram(program);
+		if(!gl.getProgramParameter(program, gl.LINK_STATUS))
+		    alert(gl.getProgramInfoLog(program));
+		gl.useProgram(program);
+		
+		program.positionAttribute = gl.getAttribLocation(program, "v3Position");
+		gl.enableVertexAttribArray(program.positionAttribute);
+		
+		program.colorAttribute = gl.getAttribLocation(program, "av3Color");
+		gl.enableVertexAttribArray(program.colorAttribute);
+	}
+	//创建buffer，将buffer绑定到web GL中
+	//新建dataArray，将dataArray绑定到buffer中
+	var buffer;
+	var colorBuffer;
+	function initBuffers(){
+	    buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		
+		var vertices = [
+		    0, .5, 0, 
+			-.5, -.5, 0,
+			.5, -.5, 0
+		];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		buffer.itemSize = 3;
+		buffer.numItems = 3;
+		
+		colorBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+		
+		var colorData = [
+		    1, 1, 0, 
+			1, 1, 0, 
+			1, 1, 0
+		];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
+		colorBuffer.itemSize = 3;
+		colorBuffer.numItems = 3;
+	}
+	//clear
+	//从缓存中获取上一次bindBuffer的buffer中的数据，draw it
+	function drawScene(){
+	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.vertexAttribPointer(program.positionAttribute, buffer.itemSize, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+		gl.vertexAttribPointer(program.colorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.drawArrays(gl.TRIANGLES, 0, colorBuffer.numItems);
+	}
+
+    function webGLStart(){
+	    initGL();
+        initShaders();
+		initBuffers();
+		gl.clearColor(0, 0, 0, 1);
+		gl.enable(gl.DEPTH_TEST);
+		drawScene();
+	}
+</script>
+
+</head>
+<body onload="webGLStart()">
+    <canvas id="canvas" style="border:1px solid:red;" width="600px" height="450px"></canvas>
+	
+	<p>//1.获取gl</p>
+    <p>//2.创建着色器</p>
+	<p>//3.指定着色器源码</p>
+	<p>//4.编译着色器源码</p>
+	<p>//5.创建程序对象</p>
+	<p>//6.附加着色器到程序对象</p>
+	<p>//7.链接着色器源码</p>
+	<p>//8.指定渲染程序对象</p>
+	<p>//9.创建webgl可以访问的存储区(缓冲)</p>
+	<p>//10.设置该存储区为相应存储区类型的当前操作对象(绑定缓冲)</p>
+	<p>//11.拷贝数据到存储区中</p>
+	<p>//12.通知gl使用哪个数据</p>
+	<p>//13.关联着色器的attribute变量到一个属性索引</p>
+	<p>//14.启用关联索引上的数据</p>
+	<p>//15.指定关联索引上的正确信息</p>
+	<p>//16.执行图形绘画</p>
+</body>
+</html>
