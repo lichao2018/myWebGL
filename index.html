@@ -25,8 +25,9 @@
     precision mediump float;
 #endif
     varying vec3 vv3Color;
+	uniform vec3 u_color;
     void main(void){
-	    gl_FragColor=vec4(vv3Color, 1.0);
+	    gl_FragColor=vec4(u_color, 1.0);
 	}
 </script>
     
@@ -86,11 +87,10 @@
 		program.positionAttribute = gl.getAttribLocation(program, "v3Position");
 		gl.enableVertexAttribArray(program.positionAttribute);
 		
-		program.colorAttribute = gl.getAttribLocation(program, "av3Color");
-		gl.enableVertexAttribArray(program.colorAttribute);
-		
 		program.resolutionUniform = gl.getUniformLocation(program, "u_resolution");
 		gl.uniform2f(program.resolutionUniform, canvas.width, canvas.height);
+
+		program.colorLocation = gl.getUniformLocation(program, "u_color");
 	}
 	//创建buffer，将buffer绑定到web GL中
 	//新建dataArray，将dataArray绑定到buffer中
@@ -99,46 +99,43 @@
 	function initBuffers(){
 	    buffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-		
+		gl.vertexAttribPointer(program.positionAttribute, 2, gl.FLOAT, false, 0, 0);
+	}
+	
+	function randomInt(range){
+	    return Math.floor(Math.random()*range);
+	}
+	
+	function setRectangle(gl, x, y, width, height){
+	    var x1 = x;
+		var x2 = x + width;
+		var y1 = y; 
+		var y2 = y + height;
 		var vertices = [
-		    10, 50,
-			100, 50,
-			50, 100,
+		    x1, y1,
+			x2, y1,
+			x1, y2,
+			x1, y2,
+			x2, y1,
+			x2, y2
 		];
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-		buffer.itemSize = 2;
-		buffer.numItems = 3;
-		
-		colorBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-		
-		var colorData = [
-		    1, 1, 0, 
-			1, 1, 0, 
-			1, 1, 0
-		];
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
-		colorBuffer.itemSize = 3;
-		colorBuffer.numItems = 3;
 	}
+	
 	//clear
 	//从缓存中获取上一次bindBuffer的buffer中的数据，draw it
 	function drawScene(){
-	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-		gl.vertexAttribPointer(program.positionAttribute, buffer.itemSize, gl.FLOAT, false, 0, 0);
-		
-		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-		gl.vertexAttribPointer(program.colorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		gl.drawArrays(gl.TRIANGLES, 0, colorBuffer.numItems);
+	    for(var i = 0; i < 30; ++i){
+		    setRectangle(gl, randomInt(300), randomInt(300), randomInt(300), randomInt(300));
+		    gl.uniform3f(program.colorLocation, Math.random(), Math.random(), Math.random());
+		    gl.drawArrays(gl.TRIANGLES, 0, 6);
+		}
 	}
 
     function webGLStart(){
 	    initGL();
         initShaders();
 		initBuffers();
-		gl.clearColor(0, 0, 0, 1);
-		gl.enable(gl.DEPTH_TEST);
 		drawScene();
 	}
 </script>
