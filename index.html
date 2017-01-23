@@ -5,16 +5,10 @@
 
 <script id="shader-vs" type="x-shader/x-vertex">
     attribute vec2 v3Position;
-	uniform vec2 u_resolution;
-	attribute vec3 av3Color;
-	varying vec3 vv3Color;
+	uniform mat3 u_matrix;
 	void main(void)
 	{
-	    vv3Color = av3Color;
-		vec2 zeroToOne = v3Position / u_resolution;
-		vec2 zeroToTwo = zeroToOne * 2.0;
-		vec2 clipSpace = zeroToTwo - 1.0;
-	    gl_Position = vec4(clipSpace, 0, 1.0);
+		gl_Position = vec4((u_matrix * vec3(v3Position, 1.0)).xy, 0, 1.0);
 	}
 </script>
 
@@ -24,7 +18,6 @@
 #else
     precision mediump float;
 #endif
-    varying vec3 vv3Color;
 	uniform vec3 u_color;
     void main(void){
 	    gl_FragColor=vec4(u_color, 1.0);
@@ -87,10 +80,9 @@
 		program.positionAttribute = gl.getAttribLocation(program, "v3Position");
 		gl.enableVertexAttribArray(program.positionAttribute);
 		
-		program.resolutionUniform = gl.getUniformLocation(program, "u_resolution");
-		gl.uniform2f(program.resolutionUniform, canvas.width, canvas.height);
-
 		program.colorLocation = gl.getUniformLocation(program, "u_color");
+		
+		program.matrix3Uniform = gl.getUniformLocation(program, "u_matrix");
 	}
 	//创建buffer，将buffer绑定到web GL中
 	//新建dataArray，将dataArray绑定到buffer中
@@ -122,12 +114,24 @@
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 	}
 	
+	function make2DProjection(width, height){
+	    return [
+		    2/width, 0, 0,
+			0, 2/height, 0,
+			-1, -1, 0
+		];
+	}
+	
 	//clear
 	//从缓存中获取上一次bindBuffer的buffer中的数据，draw it
 	function drawScene(){
-	    for(var i = 0; i < 30; ++i){
-		    setRectangle(gl, randomInt(300), randomInt(300), randomInt(300), randomInt(300));
+	    for(var i = 0; i < 20; i ++){
+		    setRectangle(gl, randomInt(300), randomInt(200), randomInt(300), randomInt(200));
 		    gl.uniform3f(program.colorLocation, Math.random(), Math.random(), Math.random());
+		
+		    var matrix = make2DProjection(canvas.width, canvas.height);
+		    gl.uniformMatrix3fv(program.matrix3Uniform, false, matrix);
+		
 		    gl.drawArrays(gl.TRIANGLES, 0, 6);
 		}
 	}
