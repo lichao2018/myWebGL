@@ -122,25 +122,84 @@
 		];
 	}
 	
+	function makeTranslation(tx, ty){
+	    return [
+		    1, 0, 0,
+			0, 1, 0,
+			tx, ty, 1
+		];
+	}
+	
+	function makeRotation(angle){
+	    var c = Math.cos(angle);
+		var s = Math.sin(angle);
+		return [
+		    c, -s, 0,
+			s, c, 0,
+			0, 0, 1
+		];
+	}
+	
+	function makeScale(sx, sy){
+	    return [
+		     sx, 0, 0,
+			 0, sy, 0,
+			 0, 0, 1
+		];
+	}
+	
 	//clear
 	//从缓存中获取上一次bindBuffer的buffer中的数据，draw it
+	var angle = 0;
+	var scaleX = 1;
+	var scaleY = 1;
+	var translation = 0;
 	function drawScene(){
-	    for(var i = 0; i < 20; i ++){
-		    setRectangle(gl, randomInt(300), randomInt(200), randomInt(300), randomInt(200));
-		    gl.uniform3f(program.colorLocation, Math.random(), Math.random(), Math.random());
+		translation += 10;
+	    angle += 10;
+		if(angle == 360)
+		    angle = 0;
+		scaleX += .1;
+		scaleY += .1;
 		
-		    var matrix = make2DProjection(canvas.width, canvas.height);
-		    gl.uniformMatrix3fv(program.matrix3Uniform, false, matrix);
+		var makeOriginMatrix = makeTranslation(-125, -125);
+		var translationMatrix = makeTranslation(translation, 0);
+		var rotationMatrix = makeRotation(angle);
+		var scaleMatrix = makeScale(scaleX, scaleY);
+		var projectionMatrix = make2DProjection(canvas.width, canvas.height);
 		
-		    gl.drawArrays(gl.TRIANGLES, 0, 6);
-		}
+		var matrix = matrixMultiply(makeOriginMatrix, rotationMatrix);
+		matrix = matrixMultiply(matrix, scaleMatrix);
+		matrix = matrixMultiply(matrix, makeTranslation(125, 125));
+		matrix = matrixMultiply(matrix, translationMatrix);
+		matrix = matrixMultiply(matrix, projectionMatrix);
+		gl.uniformMatrix3fv(program.matrix3Uniform, false, matrix);
+		
+		setRectangle(gl, 100, 100, 50, 50);
+		gl.uniform3f(program.colorLocation, .8, .8, 0);
+		
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
+	}
+	
+	function matrixMultiply(matrix1, matrix2){
+	    return [
+		    matrix1[0]*matrix2[0]+matrix1[1]*matrix2[3]+matrix1[2]*matrix2[6],
+			matrix1[0]*matrix2[1]+matrix1[1]*matrix2[4]+matrix1[2]*matrix2[7],
+			matrix1[0]*matrix2[2]+matrix1[1]*matrix2[5]+matrix1[2]*matrix2[8],
+			matrix1[3]*matrix2[0]+matrix1[4]*matrix2[3]+matrix1[5]*matrix2[6],
+			matrix1[3]*matrix2[1]+matrix1[4]*matrix2[4]+matrix1[5]*matrix2[7],
+			matrix1[3]*matrix2[2]+matrix1[4]*matrix2[5]+matrix1[5]*matrix2[8],
+			matrix1[6]*matrix2[0]+matrix1[7]*matrix2[3]+matrix1[8]*matrix2[6],
+			matrix1[6]*matrix2[1]+matrix1[7]*matrix2[4]+matrix1[8]*matrix2[7],
+			matrix1[6]*matrix2[2]+matrix1[7]*matrix2[5]+matrix1[8]*matrix2[8]
+		];
 	}
 
     function webGLStart(){
 	    initGL();
         initShaders();
 		initBuffers();
-		drawScene();
+		window.setInterval("drawScene()", 500);
 	}
 </script>
 
